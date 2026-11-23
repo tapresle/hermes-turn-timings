@@ -12,9 +12,12 @@ const host = {
   profileRoutes: async () => [{connectionId:'local',profile:'default',mode:'local',targetProfile:'default'}],
   requestProfile: (...args) => globalThis.turnTimingsRequest(...args)
 }
-const useValue = value => value.get()
+const useValue = value => value === host.state.focusedSessionId
+  ? globalThis.turnTimingsRender?.session ?? value.get() : value.get()
 const useState = initial => [initial, () => {}]
 const useEffect = () => {}
+const useRef = initial => globalThis.turnTimingsRender?.ref ?? {current: initial}
+const useLayoutEffect = (effect, deps) => globalThis.turnTimingsRender?.effects.push({effect, deps})
 const useQuery = options => { globalThis.turnTimingsQuery = options; return globalThis.turnTimingsQueryState || {} }
 const jsx = (type, props) => typeof type === 'function' ? type(props) : {type, ...props}
 const jsxs = jsx
@@ -38,6 +41,63 @@ const snapshot = [
   { role:'user', row_id:3, text:'New prompt' }, {role:'assistant', row_id:4, text:'New answer'}
 ]
 const text = pane => JSON.stringify(pane.render())
+
+function renderWithScroll(pane, verify) {
+  const viewport = { scrollTop: 0, scrollHeight: 400, clientHeight: 120 }
+  const renderState = { ref: { current: null }, effects: [], session: 'chat-a' }
+  let previous = []
+  function render(session, data) {
+    renderState.session = session
+    renderState.effects = []
+    globalThis.turnTimingsQueryState = { data }
+    const tree = pane.render()
+    if (tree.ref) tree.ref.current = viewport
+    const next = renderState.effects
+    next.forEach(({effect, deps}, i) => {
+      if (!previous[i] || deps.some((dep, index) => !Object.is(dep, previous[i][index]))) effect()
+    })
+    previous = next.map(({deps}) => deps)
+  }
+  globalThis.turnTimingsRender = renderState
+  try { verify(viewport, render) } finally {
+    delete globalThis.turnTimingsRender
+    delete globalThis.turnTimingsQueryState
+  }
+}
+
+test('scrolls the pane to the bottom after its turn completes, not when another chat finishes', () => {
+  const {pane, emit} = load()
+  renderWithScroll(pane, (viewport, render) => {
+    render('chat-a', snapshot)
+    viewport.scrollTop = 12
+    emit('message.start', {}, 'chat-b')
+    emit('message.complete', {status:'complete'}, 'chat-b')
+    render('chat-a', snapshot)
+    assert.equal(viewport.scrollTop, 12)
+    emit('message.start', {turn_id:'turn-a'})
+    render('chat-a', snapshot)
+    assert.equal(viewport.scrollTop, 12)
+    emit('message.complete', receipt)
+    render('chat-a', snapshot)
+    assert.ok(viewport.scrollTop >= viewport.scrollHeight - viewport.clientHeight)
+    viewport.scrollHeight = 650
+    render('chat-a', [...snapshot])
+    assert.ok(viewport.scrollTop >= viewport.scrollHeight - viewport.clientHeight)
+  })
+})
+
+test('scrolls to the bottom when history loads after switching chats', () => {
+  const {pane} = load()
+  renderWithScroll(pane, (viewport, render) => {
+    render('chat-a', snapshot)
+    viewport.scrollTop = 12
+    render('chat-b', undefined)
+    viewport.scrollTop = 0
+    viewport.scrollHeight = 850
+    render('chat-b', [...snapshot])
+    assert.ok(viewport.scrollTop >= viewport.scrollHeight - viewport.clientHeight)
+  })
+})
 
 test('registers a right-side pane and switches from live to completed timing', () => {
   assert.ok(plugin, 'plugin must export its registration')
