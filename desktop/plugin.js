@@ -101,7 +101,7 @@ function Pane({ liveAtom, savedAtom }) {
   useLayoutEffect(() => {
     const pane = viewport.current
     if (pane) pane.scrollTop = pane.scrollHeight
-  }, [chatKey, turn?.completion, data])
+  }, [chatKey, turn?.running?.started, turn?.completion, data])
 
   const rows = data && owner ? completedRows(data, saved, owner) : []
   const latestKey = turn?.last?.rowKey

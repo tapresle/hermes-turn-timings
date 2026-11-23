@@ -65,7 +65,7 @@ function renderWithScroll(pane, verify) {
   }
 }
 
-test('scrolls the pane to the bottom after its turn completes, not when another chat finishes', () => {
+test('scrolls the pane to the bottom when its turn starts or completes, but not for another chat', () => {
   const {pane, emit} = load()
   renderWithScroll(pane, (viewport, render) => {
     render('chat-a', snapshot)
@@ -74,6 +74,10 @@ test('scrolls the pane to the bottom after its turn completes, not when another 
     emit('message.complete', {status:'complete'}, 'chat-b')
     render('chat-a', snapshot)
     assert.equal(viewport.scrollTop, 12)
+    emit('message.start', {turn_id:'turn-a'})
+    render('chat-a', snapshot)
+    assert.ok(viewport.scrollTop >= viewport.scrollHeight - viewport.clientHeight)
+    viewport.scrollTop = 12
     emit('message.start', {turn_id:'turn-a'})
     render('chat-a', snapshot)
     assert.equal(viewport.scrollTop, 12)
