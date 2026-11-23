@@ -2,11 +2,19 @@
 
 A Hermes Desktop pane that shows how long turns take. It follows your selected chat, lists recent replies oldest first, and shows the running timer at the bottom. The package has no Python entry point or external dependencies.
 
-## Try the review build locally
+![Turn timings pane showing two sample prompts and their completed durations](docs/turn-timings.png)
 
-1. Check out the review branch. In the active Hermes Desktop installation, use the plugin directory shown under **Capabilities > Plugins**.
-2. Copy `desktop/plugin.js` to `turn-timings/plugin.js` inside that directory. If a standalone copy already exists there, it takes precedence over a packaged install; use a separate test environment or keep using the existing copy instead of overwriting it.
-3. Send a new prompt and check that the timer stays on its prompt row after the reply finishes. Reopen the chat to check that the duration persists. To hide the pane without disabling the plugin, right-click inside it and choose **Minimize**.
+## Install from Git
+
+Requires Hermes Desktop with Hermes Agent 0.23.1 or later. Version 0.23.1 is the supported minimum and was tested on macOS.
+
+1. In Hermes Desktop, open **Capabilities > Plugins > Install from Git**.
+2. Enter `https://github.com/tapresle/hermes-turn-timings.git` and install the plugin. If the repository is private, your Git credentials need read access.
+3. In **Capabilities > Plugins**, enable **Turn timings**, then open a chat. The pane appears to the right of the chat.
+
+If you already have a standalone copy of `turn-timings`, it takes precedence over the package. Use a separate test environment to verify the packaged install without replacing your standalone copy.
+
+To hide the pane without disabling the plugin, right-click inside it and choose **Minimize**. Click its collapsed rail to restore it.
 
 ## Data and limitations
 
@@ -21,3 +29,7 @@ node --check desktop/plugin.js
 node --test tests/plugin.test.mjs
 hermes plugins validate . --install-deps
 ```
+
+## License
+
+[MIT](LICENSE)

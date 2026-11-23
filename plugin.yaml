@@ -2,3 +2,4 @@ name: turn-timings
 version: "0.1.0"
 description: Per-turn timing history for Hermes Desktop.
 author: tapresle
+requires_hermes: ">=0.23.1"
