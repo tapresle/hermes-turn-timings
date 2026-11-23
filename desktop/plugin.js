@@ -1,5 +1,5 @@
 import { atom, host, useQuery, useValue } from '@hermes/plugin-sdk'
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { jsx, jsxs } from 'react/jsx-runtime'
 
 const ID = 'turn-timings'
@@ -85,7 +85,9 @@ function Pane({ liveAtom, savedAtom }) {
   const runtime = useValue(host.state.focusedSessionId)
   const active = useValue(liveAtom)
   const saved = useValue(savedAtom)
-  const turn = owner && runtime ? active.get(keyFor(owner, runtime)) : null
+  const chatKey = owner && runtime ? keyFor(owner, runtime) : null
+  const turn = chatKey ? active.get(chatKey) : null
+  const viewport = useRef(null)
   const { data, isPending, isError } = useQuery({
     queryKey: [ID, owner?.connectionId, owner?.profile, runtime, turn?.completion],
     enabled: Boolean(owner && runtime),
@@ -95,6 +97,12 @@ function Pane({ liveAtom, savedAtom }) {
         ? previous : undefined,
     retry: false
   })
+  // History can arrive after the chat switch or completion has rendered.
+  useLayoutEffect(() => {
+    const pane = viewport.current
+    if (pane) pane.scrollTop = pane.scrollHeight
+  }, [chatKey, turn?.running?.started, turn?.completion, data])
+
   const rows = data && owner ? completedRows(data, saved, owner) : []
   const latestKey = turn?.last?.rowKey
   const matchedLatest = latestKey && rows.some(row => row.replyKey === latestKey || row.userKey === latestKey)
@@ -109,6 +117,7 @@ function Pane({ liveAtom, savedAtom }) {
   return jsxs('section', {
     'aria-label': TITLE,
     className: 'h-full overflow-auto p-3 text-sm',
+    ref: viewport,
     children: [
       jsxs('dl', {
         children: [
