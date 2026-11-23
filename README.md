@@ -21,3 +21,7 @@ node --check desktop/plugin.js
 node --test tests/plugin.test.mjs
 hermes plugins validate . --install-deps
 ```
+
+## License
+
+[MIT](LICENSE)
